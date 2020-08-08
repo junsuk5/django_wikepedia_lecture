@@ -15,10 +15,12 @@ Including another URLconf
 """
 
 from urllib.request import urlopen
+import urllib.parse
 
 from bs4 import BeautifulSoup
 from django.conf.urls import url
 # Serializers define the API representation.
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -32,10 +34,25 @@ class TestView(APIView):
         return Response({'html': result.prettify()})
 
 
+@api_view(['GET'])
+def snippet_list(request):
+    if request.method == 'GET':
+        word = request.query_params.get('word', '')
+        print(word)
+        ascii_data = urllib.parse.quote(word)
+        print(f"https://ru.wiktionary.org/wiki/{ascii_data}")
+
+        html = urlopen(f"https://ru.wiktionary.org/wiki/{ascii_data}")
+        soup = BeautifulSoup(html, 'html.parser')
+        result = soup.find("table", {"class": "morfotable ru"})
+        return Response({'html': result.prettify()})
+
+
 # Routers provide an easy way of automatically determining the URL conf.
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    url(r'^test', TestView.as_view()),
+    # url(r'^test', TestView.as_view()),
+    url(r'^v1/word', snippet_list),
 ]
